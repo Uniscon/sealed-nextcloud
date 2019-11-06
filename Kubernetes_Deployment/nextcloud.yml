@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sp-sealed-nextcloud-17.0.0
+spec:
+  selector:
+    matchLabels:      
+     app: sp-sealed-nextcloud-17.0.0
+  template:
+    metadata:
+      labels:
+        app: sp-sealed-nextcloud-17.0.0
+    spec:
+      containers:
+      - name: sp-sealed-nextcloud
+        image: neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
+        env:
+        - name: DOMAIN_NAME
+          value: <Nextcloud-web-subdomain>
+        ports:
+        - containerPort: 8081
+          name: nextcloud
+        volumeMounts:
+        - mountPath: /var/www/html/data
+          name: nextcloud-volume
+          subPath: data
+        - mountPath: /var/www/html/config
+          name: nextcloud-volume
+          subPath: config
+        - mountPath: /var/www/html/apps
+          name: nextcloud-volume
+          subPath: apps
+      volumes:
+      - name: nextcloud-volume
+        persistentVolumeClaim:
+            claimName: <persistent-volume-claim>
+      imagePullSecrets:
+      - name: harbor-registry-secret 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sp-sealed-nextcloud-service
+spec:
+  ports:
+  - port: 8081
+  selector:
+    app: sp-sealed-nextcloud-17.0.0
+  clusterIP: None

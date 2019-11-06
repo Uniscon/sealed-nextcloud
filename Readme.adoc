@@ -1,0 +1,119 @@
+= Deploy nextcloud with postgres database on kubernetes
+Uniscon GmbH <support@sealedplatform.com>
+v1.0, 2019-06-28
+:sp-caption!:
+ifndef::imagesdir[:imagesdir: images]
+:title-logo-image: image:uniscontuevlogo.png[align=center,pdfwidth=50%]
+
+This guide will walk you through deploying nextcloud on Sealed Platform. The guide assume that the reader is already registered with Sealed Platform as a Tenant user, and can login to the Dashboard. It is also strongly recommended to go through the Developer's guide for detailed instructions.
+
+== Step 1 : Prepare nextcloud image
+
+We will create a nextcloud 17.0.0 image, that listens on port 8081. Build the image from current directory.
+
+ $ docker build -f ./Dockerfile_nextcloud -t sealed-nextcloud-17.0.0 . 
+
+== Step 2 : Generate TLS certificate
+
+Login to the Sealed Platform dashboard as the Tenant admin user. Navigate to 'Servers' section, click on a listed server, fill in a domain name and click on 'Assign Domain'. The domain assignment might take a while depending on the availability of the zone. Check the Job status to see the status of the domain assignment. Once a domain is successfully assigned, a certificate can be issued signed by Let's Encrypt CA. Click on 'Issue Certificate' and wait for the Job status to complete the certificate issuance process. If there is a failure, such as a blocked Zone, the certificate issuance can be retried from the job listing.
+
+== Step 3 : Generate docker login token
+
+From the Dashboard, navigate to Settings > Tokens > New Token. Select the expiry date, and click on 'Create Token'.
+
+== Step 4 : Push nextcloud image to docker registry
+
+Enable content trust for the image. 
+
+ $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://neptune.sealedplatform.com:4443
+
+Perform a `docker login` with the registration username and the token as password. Identify Harbor project uuid from https://neptune.sealedplatform.com/harbor/ . Now tag and push the image.
+
+Get <project-uuid> from https://neptune.sealedplatform.com/harbor/ under Projects and replace below.
+
+ $ docker login neptune.sealedplatform.com
+ $ docker tag sealed-nextcloud-17.0.0 neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
+ $ docker push neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
+
+== Step 5 : Create Kubernetes image pull secret
+
+ kubectl create secret generic harbor-registry-secret --from-file=.dockerconfigjson=/home/<user>/.docker/config.json --type=kubernetes.io/dockerconfigjson
+ 
+NOTE: If there doesn't exist a $HOME/.docker/config.json file or docker uses a credentials store, create a config.json manually.
+
+== Step 6 : Prepare Kubernetes deployment and service descriptors for nextcloud
+
+NOTE: Important step here is set DOMAIN_NAME variable value <Nextcloud-web-subdomain> correctly in deployment descriptor, here DOMAIN_NAME is which you created for nextcloud in Step 2(Generate TLS certificate).
+Sometimes nextclould service fails to detect valid https URL, as this service behind the proxy service, to avoid that we are setting correct DOMAIN_NAME and passing through container defination,In our case ingress service acts as proxy.
+
+Persistent Volume and Volume Claim templates are automatically generated for the Sealed Platform Tenant users. Login to the Dashboard, select the volume and expand the sections under 'Kubernetes Volume Templates'. Save each to a file and apply them on the cluster.
+
+Login to the Dashboard and get <persistent-volume-claim> name, which needs to be updated in nextcloud.yml.
+
+Update environment variable value of <Nextcloud-web-subdomain> in container defination and also verify Image name with updated <project-uuid>. project-uuid differs from Tenant to Tenant.
+
+== Step 7 : Create the deployment and service for nextcloud
+
+Validate <Nextcloud-web-subdomain>,<project-uuid>,<persistent-volume-claim> values updated correctly to nextcloud.yml.
+
+Create the deployment using kubectl
+
+ $ kubectl create -f ./Kubernetes_Deployment/nextcloud.yml
+
+== Step 8 : Prepare postgres image
+
+We will create a postgres 9.6 image, that listens on port 5432. Build the image from current directory.
+
+  $ docker build -f ./Dockerfile_Postgres -t sealed-postgres-nextcloud:9.6 .
+
+== Step 9 : Push postgres image to docker registry
+
+Note: Refer Step 3 to fetch the docker login token if not done as part of step3 or using different machine.
+
+Enable content trust for the image.
+
+ $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://neptune.sealedplatform.com:4443
+
+Perform a `docker login` with the registration username and the token as password. Identify Harbor project uuid from https://neptune.sealedplatform.com/harbor/ . Now tag and push the image.
+
+Get <project-uuid> from https://neptune.sealedplatform.com/harbor/ under Projects and replace below.
+
+ $ docker login neptune.sealedplatform.com
+ $ docker tag sealed-postgres-nextcloud:9.6 neptune.sealedplatform.com/<project-uuid>/sealed-postgres-nextcloud:9.6
+ $ docker push neptune.sealedplatform.com/<project-uuid>/sealed-postgres-nextcloud:9.6
+
+== Step 10 : Prepare Kubernetes deployment and service descriptors for Postgres
+
+Persistent Volume and Volume Claim templates are automatically generated for the Sealed Platform Tenant users. Login to the Dashboard, select the volume and expand the sections under 'Kubernetes Volume Templates'. Save each to a file and apply them on the cluster.
+
+Login to the Dashboard and get <persistent-volume-claim> name, which needs to be updated in postgres-nextcloud.yml.
+
+Update Image name with updated <project-uuid>. project-uuid differs from Tenant to Tenant.
+
+== Step 11 : Create the deployment and service for postgres
+
+Validate <project-uuid>,<persistent-volume-claim> values updated correctly to postgres-nextcloud.yml.
+
+Create the deployment using kubectl
+
+ $ kubectl create -f ./Kubernetes_Deployment/postgres-nextcloud.yml
+
+== Step 12 :  Prepare Kubernetes SSL secret and ingress  descriptors 
+
+NOTE: Before we proceed with Ingress steps, make sure your environment have nginx ingress contol deployed.
+
+Generate base64 encoded strings without line wrapping for <base64-cert-pem> and <base64-key-pem> respectively, from .pem files
+
+ $ base64 -w 0 cert.pem
+ $ base64 -w 0 key.pem 
+
+Set <base64-cert-pem> and <base64-key-pem> values from above to a file ./Kubernetes_Deployment/ingress_nextcloud_ssl_secret.yml
+
+Set <Nextcloud-web-subdomain> subdomain for the Ingress resource assigned to Sealed Nextcloud in ./Kubernetes_Deployment/ingress_nextcloud.yml file
+
+== Step 13 : Create the SSL secret and Ingress service
+
+Create the deployment using kubectl
+
+ $ kubectl create -f ./Kubernetes_Deployment/ingress_nextcloud_ssl_secret.yml
+ $ kubectl create -f ./Kubernetes_Deployment/ingress_nextcloud.yml

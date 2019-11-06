@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sp-sealed-nextcloud
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.org/ssl-services: sp-sealed-nextcloud
+spec:
+  tls:
+    - hosts:
+        - <Nextcloud-web-subdomain>
+      secretName: sp-sealed-nextcloud-ssl-cert
+  rules:
+    - host: <Nextcloud-web-subdomain>
+      http:
+        paths:
+          - backend:
+              serviceName: sp-sealed-nextcloud-service
+              servicePort: 8081

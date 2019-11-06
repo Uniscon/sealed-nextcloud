@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sp-sealed-postgres-nextcloud-9.6
+spec:
+  selector:
+    matchLabels:
+      app: sp-sealed-postgres-nextcloud-9.6
+  template:
+    metadata:
+      labels:
+        app: sp-sealed-postgres-nextcloud-9.6
+    spec:
+      containers:
+      - name: sp-sealed-postgres-nextcloud
+        image: neptune.sealedplatform.com/<project-uuid>/sealed-postgres-nextcloud:9.6
+        env:
+        - name: POSTGRES_PASSWORD
+          value: OdT0NHXh15nhWZ
+        - name: POSTGRES_USER
+          value: unisconnextcloud
+        - name: POSTGRES_DB
+          value: sealed_nextcloud
+        ports:
+        - containerPort: 5432
+          name: postgres
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-nextcloud-volume
+          subPath: data_nextcloud
+      volumes:
+      - name: postgres-nextcloud-volume
+        persistentVolumeClaim:
+          claimName: <persistent-volume-claim>
+      imagePullSecrets:
+      - name: harbor-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sp-sealed-postgres-nextcloud-service
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: sp-sealed-postgres-nextcloud-9.6
+  clusterIP: None
