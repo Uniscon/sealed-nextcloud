@@ -25,7 +25,7 @@ From the Dashboard, navigate to Settings > Tokens > New Token. Select the expiry
 
 Enable content trust for the image. 
 
- $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://neptune.sealedplatform.com:4443
+ $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://notary.neptune.sealedplatform.com
 
 Perform a `docker login` with the registration username and the token as password. Identify Harbor project uuid from https://neptune.sealedplatform.com/harbor/ . Now tag and push the image.
 
@@ -72,7 +72,7 @@ Note: Refer Step 3 to fetch the docker login token if not done as part of step3 
 
 Enable content trust for the image.
 
- $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://neptune.sealedplatform.com:4443
+ $ export DOCKER_CONTENT_TRUST=1; export DOCKER_CONTENT_TRUST_SERVER=https://notary.neptune.sealedplatform.com
 
 Perform a `docker login` with the registration username and the token as password. Identify Harbor project uuid from https://neptune.sealedplatform.com/harbor/ . Now tag and push the image.
 
