@@ -1,19 +1,19 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: sp-sealed-nextcloud-17.0.0
+  name: sp-sealed-nextcloud-17
 spec:
   selector:
     matchLabels:      
-     app: sp-sealed-nextcloud-17.0.0
+     app: sp-sealed-nextcloud-17
   template:
     metadata:
       labels:
-        app: sp-sealed-nextcloud-17.0.0
+        app: sp-sealed-nextcloud-17
     spec:
       containers:
       - name: sp-sealed-nextcloud
-        image: neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
+        image: neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud:v17
         env:
         - name: DOMAIN_NAME
           value: <Nextcloud-web-subdomain>
@@ -45,5 +45,5 @@ spec:
   ports:
   - port: 8081
   selector:
-    app: sp-sealed-nextcloud-17.0.0
+    app: sp-sealed-nextcloud-17
   clusterIP: None

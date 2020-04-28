@@ -11,7 +11,7 @@ This guide will walk you through deploying nextcloud on Sealed Platform. The gui
 
 We will create a nextcloud 17.0.0 image, that listens on port 8081. Build the image from current directory.
 
- $ docker build -f ./Dockerfile_nextcloud -t sealed-nextcloud-17.0.0 . 
+ $ docker build -f ./Dockerfile_nextcloud -t sealed-nextcloud:v17 . 
 
 == Step 2 : Generate TLS certificate
 
@@ -32,8 +32,8 @@ Perform a `docker login` with the registration username and the token as passwor
 Get <project-uuid> from https://neptune.sealedplatform.com/harbor/ under Projects and replace below.
 
  $ docker login neptune.sealedplatform.com
- $ docker tag sealed-nextcloud-17.0.0 neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
- $ docker push neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud-17.0.0
+ $ docker tag sealed-nextcloud:v17 neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud:v17
+ $ docker push neptune.sealedplatform.com/<project-uuid>/sealed-nextcloud:v17
 
 == Step 5 : Create Kubernetes image pull secret
 
